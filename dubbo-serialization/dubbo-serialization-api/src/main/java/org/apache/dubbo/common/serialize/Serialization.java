@@ -40,12 +40,14 @@ public interface Serialization {
      * any value of {@link Constants} and don't greater than ExchangeCodec.SERIALIZATION_MASK (31) 
      * because dubbo protocol use 5 bits to record serialization ID in header.
      *
+     *每一种序列化算法都对应一个ContentType，该方法用于获取ContentType
      * @return content type id
      */
     byte getContentTypeId();
 
     /**
      * Get content type
+     * 每一种序列化算法都对应一个ContentType，该方法用于获取ContentType
      *
      * @return content type
      */
@@ -53,6 +55,7 @@ public interface Serialization {
 
     /**
      * Get a serialization implementation instance
+     * 创建一个ObjectOutput对象，ObjectOutput负责实现序列化的功能，即将Java对象转化为字节序列
      *
      * @param url URL address for the remote service
      * @param output the underlying output stream
@@ -64,6 +67,7 @@ public interface Serialization {
 
     /**
      * Get a deserialization implementation instance
+     * 创建一个ObjectInput对象，ObjectInput负责实现反序列化的功能，即将字节序列转换成Java对象
      *
      * @param url URL address for the remote service
      * @param input the underlying input stream

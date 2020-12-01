@@ -120,6 +120,7 @@ public class NettyClientHandler extends ChannelDuplexHandler {
                 Request req = new Request();
                 req.setVersion(Version.getProtocolVersion());
                 req.setTwoWay(true);
+                //发送心跳请求
                 req.setEvent(HEARTBEAT_EVENT);
                 channel.send(req);
             } finally {

@@ -101,7 +101,9 @@ public class NettyServerHandler extends ChannelDuplexHandler {
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        //将发送的数据继续向下传递
         super.write(ctx, msg, promise);
+        //并不影响消息的继续发送，只是触发sent()方法进行相关的处理，这也是方法名称是动词过去式的原因
         NettyChannel channel = NettyChannel.getOrAddChannel(ctx.channel(), url, handler);
         handler.sent(channel, msg);
     }

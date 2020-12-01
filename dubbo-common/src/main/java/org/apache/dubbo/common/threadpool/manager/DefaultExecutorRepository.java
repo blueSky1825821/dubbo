@@ -51,7 +51,10 @@ public class DefaultExecutorRepository implements ExecutorRepository {
     private ScheduledExecutorService serviceExporterExecutor;
 
     private ScheduledExecutorService reconnectScheduledExecutor;
-
+    /**
+     * 第一层key表示线程池属于provider还是consumer端
+     * 第二层key表示线程池关联服务的端口
+     */
     private ConcurrentMap<String, ConcurrentMap<Integer, ExecutorService>> data = new ConcurrentHashMap<>();
 
     public DefaultExecutorRepository() {

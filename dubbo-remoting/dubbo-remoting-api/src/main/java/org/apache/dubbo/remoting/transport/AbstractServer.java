@@ -50,9 +50,14 @@ public abstract class AbstractServer extends AbstractEndpoint implements Remotin
     ExecutorService executor;
     private InetSocketAddress localAddress;
     private InetSocketAddress bindAddress;
+    /**
+     * 最大连接数 0 没有限制
+     */
     private int accepts;
     private int idleTimeout;
-
+    /**
+     * 负责线程池的管理
+     */
     private ExecutorRepository executorRepository = ExtensionLoader.getExtensionLoader(ExecutorRepository.class).getDefaultExtension();
 
     public AbstractServer(URL url, ChannelHandler handler) throws RemotingException {

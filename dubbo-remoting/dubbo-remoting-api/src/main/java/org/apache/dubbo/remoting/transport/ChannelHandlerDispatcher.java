@@ -28,6 +28,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * ChannelListenerDispatcher
+ * 负责将多个ChannelHandler对象聚合成一个ChannelHandler对象
  */
 public class ChannelHandlerDispatcher implements ChannelHandler {
 

@@ -85,6 +85,8 @@ public interface Result extends Serializable {
      * @return result.
      * @throws if has exception throw it.
      */
+    // recreate()方法是一个复合操作，如果此次调用发生异常，则直接抛出异常，
+    // 如果没有异常，则返回结果
     Object recreate() throws Throwable;
 
     /**
@@ -149,7 +151,7 @@ public interface Result extends Serializable {
 
     /**
      * get attachment by key with default value.
-     *
+     * Result中同样可以携带附加信息
      * @return attachment value.
      */
     String getAttachment(String key, String defaultValue);
@@ -175,14 +177,14 @@ public interface Result extends Serializable {
      * <p>
      * Just as the method name implies, this method will guarantee the callback being triggered under the same context as when the call was started,
      * see implementation in {@link Result#whenCompleteWithContext(BiConsumer)}
-     *
+     * 添加一个回调，当RPC调用完成时，会触发这里添加的回调
      * @param fn
      * @return
      */
     Result whenCompleteWithContext(BiConsumer<Result, Throwable> fn);
 
     <U> CompletableFuture<U> thenApply(Function<Result, ? extends U> fn);
-
+    // 阻塞线程，等待此次RPC调用完成(或是超时)
     Result get() throws InterruptedException, ExecutionException;
 
     Result get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException;

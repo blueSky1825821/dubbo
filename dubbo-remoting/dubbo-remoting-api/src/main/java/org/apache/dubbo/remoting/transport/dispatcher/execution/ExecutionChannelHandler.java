@@ -33,6 +33,7 @@ import java.util.concurrent.RejectedExecutionException;
 /**
  * Only request message will be dispatched to thread pool. Other messages like response, connect, disconnect,
  * heartbeat will be directly executed by I/O thread.
+ * 只会将请求消息派发到线程池进行处理
  */
 public class ExecutionChannelHandler extends WrappedChannelHandler {
 
@@ -57,6 +58,7 @@ public class ExecutionChannelHandler extends WrappedChannelHandler {
                 throw new ExecutionException(message, channel, getClass() + " error when process received event.", t);
             }
         } else if (executor instanceof ThreadlessExecutor) {
+            //特殊处理
             executor.execute(new ChannelEventRunnable(channel, handler, ChannelState.RECEIVED, message));
         } else {
             handler.received(channel, message);

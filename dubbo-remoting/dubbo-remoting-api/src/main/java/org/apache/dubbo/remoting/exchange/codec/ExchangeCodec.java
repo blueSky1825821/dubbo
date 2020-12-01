@@ -43,6 +43,10 @@ import java.io.InputStream;
 
 /**
  * ExchangeCodec.
+ * 它在 TelnetCodec 的基础之上，添加了处理协议头的能力。下面是 Dubbo 协议的格式，能够清晰地看出协议中各个数据所占的位数：
+ * https://s0.lgstatic.com/i/image/M00/5B/E3/CgqCHl-AF-eAdTmiAADznCJnMrw389.png
+ *
+ * 协议头就是通过 ExchangeCodec 实现编解码的。
  */
 public class ExchangeCodec extends TelnetCodec {
 
@@ -210,31 +214,38 @@ public class ExchangeCodec extends TelnetCodec {
     protected void encodeRequest(Channel channel, ChannelBuffer buffer, Request req) throws IOException {
         Serialization serialization = getSerialization(channel);
         // header.
+        // 该数组用来暂存协议头
         byte[] header = new byte[HEADER_LENGTH];
         // set magic number.
         Bytes.short2bytes(MAGIC, header);
-
+        // 根据当前使用的序列化设置协议头中的序列化标志位
         // set request and serialization flag.
         header[2] = (byte) (FLAG_REQUEST | serialization.getContentTypeId());
-
+        // 设置协议头中的2Way标志位
         if (req.isTwoWay()) {
             header[2] |= FLAG_TWOWAY;
         }
+        // 设置协议头中的2Way标志位
         if (req.isEvent()) {
             header[2] |= FLAG_EVENT;
         }
-
+        // 设置协议头中的2Way标志位
         // set request id.
         Bytes.long2bytes(req.getId(), header, 4);
-
+        // 下面开始序列化请求，并统计序列化后的字节数
+        // 首先使用savedWriteIndex记录ChannelBuffer当前的写入位置
         // encode request data.
         int savedWriteIndex = buffer.writerIndex();
+        // 将写入位置后移16字节
         buffer.writerIndex(savedWriteIndex + HEADER_LENGTH);
+        // 根据选定的序列化方式对请求进行序列化
         ChannelBufferOutputStream bos = new ChannelBufferOutputStream(buffer);
         ObjectOutput out = serialization.serialize(channel.getUrl(), bos);
         if (req.isEvent()) {
+            // 对事件进行序列化
             encodeEventData(channel, out, req.getData());
         } else {
+            //对Dubbo请求进行序列化，具体在DubboCodec中实现
             encodeRequestData(channel, out, req.getData(), req.getVersion());
         }
         out.flushBuffer();
@@ -242,14 +253,20 @@ public class ExchangeCodec extends TelnetCodec {
             ((Cleanable) out).cleanup();
         }
         bos.flush();
+        // 完成序列化
         bos.close();
+        // 统计请求序列化之后，得到的字节数
         int len = bos.writtenBytes();
+        // 限制一下请求的字节长度
         checkPayload(channel, len);
+        // 将字节数写入header数组中
         Bytes.int2bytes(len, header, 12);
 
         // write
+        // 下面调整ChannelBuffer当前的写入位置，并将协议头写入Buffer中
         buffer.writerIndex(savedWriteIndex);
         buffer.writeBytes(header); // write header.
+        // 最后，将ChannelBuffer的写入位置移动到正确的位置
         buffer.writerIndex(savedWriteIndex + HEADER_LENGTH + len);
     }
 

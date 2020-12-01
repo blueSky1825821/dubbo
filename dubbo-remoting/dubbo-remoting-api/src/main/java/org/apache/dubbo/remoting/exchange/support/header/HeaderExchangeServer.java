@@ -59,7 +59,9 @@ public class HeaderExchangeServer implements ExchangeServer {
 
     private static final HashedWheelTimer IDLE_CHECK_TIMER = new HashedWheelTimer(new NamedThreadFactory("dubbo-server-idleCheck", true), 1,
             TimeUnit.SECONDS, TICKS_PER_WHEEL);
-
+    /**
+     * 定期关闭长时间空闲的连接
+     */
     private CloseTimerTask closeTimerTask;
 
     public HeaderExchangeServer(RemotingServer server) {
@@ -106,6 +108,8 @@ public class HeaderExchangeServer implements ExchangeServer {
             final long max = (long) timeout;
             final long start = System.currentTimeMillis();
             if (getUrl().getParameter(Constants.CHANNEL_SEND_READONLYEVENT_KEY, true)) {
+                // 发送 READONLY_EVENT事件给所有连接该服务器的客户端，表示 Server 不可读了。
+                // 如果注册中心有延迟，会立即受到readonly事件，下次不会再调用这台机器，当前已经调用的会处理完
                 sendChannelReadOnlyEvent();
             }
             while (HeaderExchangeServer.this.isRunning()
@@ -118,6 +122,7 @@ public class HeaderExchangeServer implements ExchangeServer {
             }
         }
         doClose();
+        // 关闭Transport层的Server
         server.close(timeout);
     }
 

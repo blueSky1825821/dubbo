@@ -48,11 +48,16 @@ final class NettyChannel extends AbstractChannel {
     private static final ConcurrentMap<Channel, NettyChannel> CHANNEL_MAP = new ConcurrentHashMap<Channel, NettyChannel>();
     /**
      * netty channel
+     * Netty框架中的Channel与当前的Dubbo Channel对象一一对应
      */
     private final Channel channel;
-
+    /**
+     * 当前Channel中附加属性都会记录到该map中
+     */
     private final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
-
+    /**
+     * 标记当前channel是否可用
+     */
     private final AtomicBoolean active = new AtomicBoolean(false);
 
     /**
@@ -159,6 +164,7 @@ final class NettyChannel extends AbstractChannel {
         boolean success = true;
         int timeout = 0;
         try {
+            //使用Netty框架的Channel发送数据
             ChannelFuture future = channel.writeAndFlush(message);
             if (sent) {
                 // wait timeout ms
@@ -170,6 +176,7 @@ final class NettyChannel extends AbstractChannel {
                 throw cause;
             }
         } catch (Throwable e) {
+            //在底层连接断开时，会清理CHANNEL_MAP
             removeChannelIfDisconnected(channel);
             throw new RemotingException(this, "Failed to send message " + PayloadDropper.getRequestWithoutData(message) + " to " + getRemoteAddress() + ", cause: " + e.getMessage(), e);
         }

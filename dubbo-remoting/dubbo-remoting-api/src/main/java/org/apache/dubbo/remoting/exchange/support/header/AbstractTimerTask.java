@@ -29,11 +29,17 @@ import java.util.concurrent.TimeUnit;
  * AbstractTimerTask
  */
 public abstract class AbstractTimerTask implements TimerTask {
-
+    /**
+     * 定时任务会从该对象中获取 Channel。
+     */
     private final ChannelProvider channelProvider;
-
+    /**
+     * 任务的过期时间。
+     */
     private final Long tick;
-
+    /**
+     * 任务是否已取消。
+     */
     protected volatile boolean cancel = false;
 
     AbstractTimerTask(ChannelProvider channelProvider, Long tick) {

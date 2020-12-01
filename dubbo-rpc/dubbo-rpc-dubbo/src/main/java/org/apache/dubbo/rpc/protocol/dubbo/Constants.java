@@ -29,7 +29,9 @@ public interface Constants {
      * which can set the number of long TCP connections shared to avoid the bottleneck of sharing a single long TCP connection.
      */
     String DEFAULT_SHARE_CONNECTIONS = "1";
-
+    /**
+     * 决定是否在 DubboCodec 中进行解码（DubboCodec 是在 IO 线程中调用的）。
+     */
     String DECODE_IN_IO_THREAD_KEY = "decode.in.io";
 
     boolean DEFAULT_DECODE_IN_IO_THREAD = false;

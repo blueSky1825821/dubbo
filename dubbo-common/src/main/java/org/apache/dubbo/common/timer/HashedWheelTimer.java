@@ -100,20 +100,43 @@ public class HashedWheelTimer implements Timer {
     private static final int WORKER_STATE_SHUTDOWN = 2;
 
     /**
+     * 时间轮当前所处状态
+     * 有相应的 AtomicIntegerFieldUpdater 实现 workerState 的原子修改。
      * 0 - init, 1 - started, 2 - shut down
      */
     @SuppressWarnings({"unused", "FieldMayBeFinal"})
     private volatile int workerState;
 
+    /**
+     * the duration between tick
+     */
     private final long tickDuration;
+    /**
+     * 该数组就是时间轮的环形队列，每一个元素都是一个槽。当指定时间轮槽数为 n 时，实际上会取大于且最靠近 n 的 2 的幂次方值。
+     */
     private final HashedWheelBucket[] wheel;
+    /**
+     * 掩码， mask = wheel.length - 1，执行 ticks & mask 便能定位到对应的时钟槽。
+     */
     private final int mask;
     private final CountDownLatch startTimeInitialized = new CountDownLatch(1);
+    /**
+     * timeouts 队列用于缓冲外部提交时间轮中的定时任务
+     */
     private final Queue<HashedWheelTimeout> timeouts = new LinkedBlockingQueue<>();
+    /**
+     * cancelledTimeouts 队列用于暂存取消的定时任务。
+     */
     private final Queue<HashedWheelTimeout> cancelledTimeouts = new LinkedBlockingQueue<>();
+    /**
+     * 当前时间轮剩余的定时任务总数。
+     */
     private final AtomicLong pendingTimeouts = new AtomicLong(0);
     private final long maxPendingTimeouts;
 
+    /**
+     * 当前时间轮的启动时间，提交到该时间轮的定时任务的 deadline 字段值均以该时间戳为起点进行计算。
+     */
     private volatile long startTime;
 
     /**
@@ -289,6 +312,9 @@ public class HashedWheelTimer implements Timer {
         return wheel;
     }
 
+    /**
+     * 该数组就是时间轮的环形队列，每一个元素都是一个槽。当指定时间轮槽数为 n 时，实际上会取大于且最靠近 n 的 2 的幂次方值。
+     */
     private static int normalizeTicksPerWheel(int ticksPerWheel) {
         int normalizedTicksPerWheel = ticksPerWheel - 1;
         normalizedTicksPerWheel |= normalizedTicksPerWheel >>> 1;
@@ -424,6 +450,9 @@ public class HashedWheelTimer implements Timer {
     private final class Worker implements Runnable {
         private final Set<Timeout> unprocessedTimeouts = new HashSet<Timeout>();
 
+        /**
+         * 是时间轮的指针，是一个步长为 1 的单调递增计数器。
+         */
         private long tick;
 
         @Override
@@ -550,22 +579,37 @@ public class HashedWheelTimer implements Timer {
         }
     }
 
+    /**
+     * 1、时间轮中双向链表的节点，即定时任务 TimerTask 在 HashedWheelTimer 中的容器。
+     * 2、定时任务 TimerTask 提交到 HashedWheelTimer 之后返回的句柄（Handle），用于在时间轮外部查看和控制定时任务。
+     */
     private static final class HashedWheelTimeout implements Timeout {
 
         private static final int ST_INIT = 0;
         private static final int ST_CANCELLED = 1;
         private static final int ST_EXPIRED = 2;
+        /**
+         * 指定时任务当前所处状态
+         * 实现 state 状态变更的原子性。
+         */
         private static final AtomicIntegerFieldUpdater<HashedWheelTimeout> STATE_UPDATER =
                 AtomicIntegerFieldUpdater.newUpdater(HashedWheelTimeout.class, "state");
 
         private final HashedWheelTimer timer;
         private final TimerTask task;
+        /**
+         * 指定时任务执行的时间。这个时间是在创建 HashedWheelTimeout 时指定的，
+         * 计算公式是：
+         * currentTime（创建 HashedWheelTimeout 的时间） + delay（任务延迟时间） - startTime（HashedWheelTimer 的启动时间），时间单位为纳秒。
+         */
         private final long deadline;
 
         @SuppressWarnings({"unused", "FieldMayBeFinal", "RedundantFieldInitialization"})
         private volatile int state = ST_INIT;
 
         /**
+         * 指当前任务剩余的时钟周期数
+         * 时间轮所能表示的时间长度是有限的，在任务到期时间与当前时刻的时间差，超过时间轮单圈能表示的时长，就出现了套圈的情况，需要该字段值表示剩余的时钟周期。
          * RemainingRounds will be calculated and set by Worker.transferTimeoutsToBuckets() before the
          * HashedWheelTimeout will be added to the correct HashedWheelBucket.
          */
@@ -685,6 +729,8 @@ public class HashedWheelTimer implements Timer {
     }
 
     /**
+     * 时间轮中的一个槽，时间轮中的槽实际上就是一个用于缓存和管理双向链表的容器，
+     * 双向链表中的每一个节点就是一个 HashedWheelTimeout 对象，也就关联了一个 TimerTask 定时任务。
      * Bucket that stores HashedWheelTimeouts. These are stored in a linked-list like datastructure to allow easy
      * removal of HashedWheelTimeouts in the middle. Also the HashedWheelTimeout act as nodes themself and so no
      * extra object creation is needed.
@@ -733,12 +779,16 @@ public class HashedWheelTimer implements Timer {
                 } else if (timeout.isCancelled()) {
                     next = remove(timeout);
                 } else {
+                    //对于未到期的任务，会将 remainingRounds 字段（剩余时钟周期数）减一。
                     timeout.remainingRounds--;
                 }
                 timeout = next;
             }
         }
 
+        /**
+         * 循环调用 pollTimeout() 方法处理整个双向链表，并返回所有未超时或者未被取消的任务。
+         */
         public HashedWheelTimeout remove(HashedWheelTimeout timeout) {
             HashedWheelTimeout next = timeout.next;
             // remove timeout that was either processed or cancelled by updating the linked-list
@@ -785,6 +835,9 @@ public class HashedWheelTimer implements Timer {
             }
         }
 
+        /**
+         * 移除双向链表中的头结点，并将其返回。
+         */
         private HashedWheelTimeout pollTimeout() {
             HashedWheelTimeout head = this.head;
             if (head == null) {

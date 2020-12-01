@@ -155,6 +155,7 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
 
     @Override
     public void close(int timeout) {
+        // 引用次数减到0，关闭底层的ExchangeClient，具体操作有：停掉心跳任务、重连任务以及关闭底层Channel
         if (referenceCount.decrementAndGet() <= 0) {
             if (timeout == 0) {
                 client.close();

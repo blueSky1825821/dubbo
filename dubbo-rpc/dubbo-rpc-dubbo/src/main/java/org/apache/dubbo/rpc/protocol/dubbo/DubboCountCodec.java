@@ -42,25 +42,33 @@ public final class DubboCountCodec implements Codec2 {
 
     @Override
     public Object decode(Channel channel, ChannelBuffer buffer) throws IOException {
+        // 首先保存readerIndex指针位置
         int save = buffer.readerIndex();
+        // 创建MultiMessage对象，其中可以存储多条消息
         MultiMessage result = MultiMessage.create();
         do {
+            // 通过DubboCodec提供的解码能力解码一条消息
             Object obj = codec.decode(channel, buffer);
+            // 如果可读字节数不足一条消息，则会重置readerIndex指针
             if (Codec2.DecodeResult.NEED_MORE_INPUT == obj) {
                 buffer.readerIndex(save);
                 break;
             } else {
+                // 将成功解码的消息添加到MultiMessage中暂存
                 result.addMessage(obj);
                 logMessageLength(obj, buffer.readerIndex() - save);
                 save = buffer.readerIndex();
             }
         } while (true);
+        // 一条消息也未解码出来，则返回NEED_MORE_INPUT错误码
         if (result.isEmpty()) {
             return Codec2.DecodeResult.NEED_MORE_INPUT;
         }
+        // 只解码出来一条消息，则直接返回该条消息
         if (result.size() == 1) {
             return result.get(0);
         }
+        // 解码出多条消息的话，会将MultiMessage返回
         return result;
     }
 

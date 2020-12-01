@@ -55,6 +55,9 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
         this.handler = handler;
     }
 
+    /**
+     * DefaultFuture 设置为完成状态（或是异常完成状态）
+     */
     static void handleResponse(Channel channel, Response response) throws RemotingException {
         if (response != null && !response.isHeartbeat()) {
             DefaultFuture.received(channel, response);
@@ -77,6 +80,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
 
     void handleRequest(final ExchangeChannel channel, Request req) throws RemotingException {
         Response res = new Response(req.getId(), req.getVersion());
+        // 请求解码失败
         if (req.isBroken()) {
             Object data = req.getData();
 
@@ -90,14 +94,16 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
             }
             res.setErrorMessage("Fail to decode request due to: " + msg);
             res.setStatus(Response.BAD_REQUEST);
-
+            // 将异常响应返回给对端
             channel.send(res);
             return;
         }
         // find handler by message class.
         Object msg = req.getData();
         try {
+            // 交给上层实现的ExchangeHandler进行处理
             CompletionStage<Object> future = handler.reply(channel, msg);
+            // 处理结束后的回调
             future.whenComplete((appResult, t) -> {
                 try {
                     if (t == null) {
@@ -174,6 +180,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
                 if (request.isTwoWay()) {
                     handleRequest(exchangeChannel, request);
                 } else {
+                    //由于不需要响应，HeaderExchangeHandler 不会关注处理结果。
                     handler.received(exchangeChannel, request.getData());
                 }
             }

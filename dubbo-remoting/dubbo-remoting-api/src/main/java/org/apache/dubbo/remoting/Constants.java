@@ -112,7 +112,7 @@ public interface Constants {
     String DISPATCHER_KEY = "dispatcher";
 
     String CHANNEL_ATTRIBUTE_READONLY_KEY = "channel.readonly";
-
+    //为服务提供者url增加channel.readonly.sent属性，默认为true，表示在发送请求时，是否等待将字节写入socket后再返回，默认为true。
     String CHANNEL_READONLYEVENT_SENT_KEY = "channel.readonly.sent";
 
     String CHANNEL_SEND_READONLYEVENT_KEY = "channel.readonly.send";

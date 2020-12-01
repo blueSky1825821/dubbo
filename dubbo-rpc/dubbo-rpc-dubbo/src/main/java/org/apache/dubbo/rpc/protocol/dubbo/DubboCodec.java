@@ -124,8 +124,11 @@ public class DubboCodec extends ExchangeCodec {
                     DecodeableRpcInvocation inv;
                     if (channel.getUrl().getParameter(DECODE_IN_IO_THREAD_KEY, DEFAULT_DECODE_IN_IO_THREAD)) {
                         inv = new DecodeableRpcInvocation(channel, req, is, proto);
+                        // 直接调用decode()方法在当前IO线程中解码
                         inv.decode();
                     } else {
+                        // 这里只是读取数据，不会调用decode()方法在当前IO线程中进行解码
+                        //DecodeHandler（Transport 层），它的 received() 方法也是可以进行解码的
                         inv = new DecodeableRpcInvocation(channel, req,
                                 new UnsafeByteArrayInputStream(readMessageData(is)), proto);
                     }

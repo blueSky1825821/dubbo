@@ -36,6 +36,7 @@ import java.util.concurrent.TimeoutException;
  * Tasks submitted to this executor through {@link #execute(Runnable)} will not get scheduled to a specific thread, though normal executors always do the schedule.
  * Those tasks are stored in a blocking queue and will only be executed when a thread calls {@link #waitAndDrain()}, the thread executing the task
  * is exactly the same as the one calling waitAndDrain.
+ * 内部不管理任何线程,放入队列中
  */
 public class ThreadlessExecutor extends AbstractExecutorService {
     private static final Logger logger = LoggerFactory.getLogger(ThreadlessExecutor.class.getName());
@@ -85,14 +86,15 @@ public class ThreadlessExecutor extends AbstractExecutorService {
         if (finished) {
             return;
         }
-
+        //获取阻塞队列中获取任务
         Runnable runnable = queue.take();
 
         synchronized (lock) {
             waiting = false;
+            //执行任务
             runnable.run();
         }
-
+        //如果阻塞队列中还有其他任务，也一并执行
         runnable = queue.poll();
         while (runnable != null) {
             try {
@@ -132,9 +134,12 @@ public class ThreadlessExecutor extends AbstractExecutorService {
     @Override
     public void execute(Runnable runnable) {
         synchronized (lock) {
+            //判断业务线程是否还在等待响应结果
             if (!waiting) {
+                //不等待则直接交给共享线程池处理任务
                 sharedExecutor.execute(runnable);
             } else {
+                //等待则将任务写入队列，然后由业务线程自己执行
                 queue.add(runnable);
             }
         }

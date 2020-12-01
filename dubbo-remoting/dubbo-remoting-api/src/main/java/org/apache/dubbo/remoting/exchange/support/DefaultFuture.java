@@ -243,6 +243,9 @@ public class DefaultFuture extends CompletableFuture<Object> {
         return timeout;
     }
 
+    /**
+     * 记录请求发送的时间戳
+     */
     private void doSent() {
         sent = System.currentTimeMillis();
     }

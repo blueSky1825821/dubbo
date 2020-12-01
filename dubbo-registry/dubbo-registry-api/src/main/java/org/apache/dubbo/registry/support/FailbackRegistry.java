@@ -62,6 +62,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
     private final int retryPeriod;
 
     // Timer for failure retry, regular check if there is a request for failure, and if there is, an unlimited retry
+    // 用于定时执行失败重试操作的时间轮
     private final HashedWheelTimer retryTimer;
 
     public FailbackRegistry(URL url) {

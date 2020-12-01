@@ -37,6 +37,7 @@ public interface Protocol {
     int getDefaultPort();
 
     /**
+     * 需要幂等
      * Export service for remote invocation: <br>
      * 1. Protocol should record request source address after receive a request:
      * RpcContext.getContext().setRemoteAddress();<br>
@@ -53,6 +54,8 @@ public interface Protocol {
     <T> Exporter<T> export(Invoker<T> invoker) throws RpcException;
 
     /**
+     * 引用一个Invoker，refer()方法会根据参数返回一个Invoker对象，
+     * Consumer端可以通过这个Invoker请求到Provider端的服务
      * Refer a remote service: <br>
      * 1. When user calls `invoke()` method of `Invoker` object which's returned from `refer()` call, the protocol
      * needs to correspondingly execute `invoke()` method of `Invoker` object <br>
@@ -80,6 +83,7 @@ public interface Protocol {
 
     /**
      * Get all servers serving this protocol
+     * 返回当前Protocol底层的全部ProtocolServer
      *
      * @return
      */
