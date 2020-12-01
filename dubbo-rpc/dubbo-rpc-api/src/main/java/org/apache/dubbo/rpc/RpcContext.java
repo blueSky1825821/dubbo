@@ -58,6 +58,7 @@ public class RpcContext {
 
     /**
      * use internal thread local to improve performance
+     * 在发起请求时，会使用该RpcContext来存储上下文信息
      */
     // FIXME REQUEST_CONTEXT
     private static final InternalThreadLocal<RpcContext> LOCAL = new InternalThreadLocal<RpcContext>() {
@@ -66,7 +67,7 @@ public class RpcContext {
             return new RpcContext();
         }
     };
-
+    // 在接收到响应的时候，会使用该RpcContext来存储上下文信息
     // FIXME RESPONSE_CONTEXT
     private static final InternalThreadLocal<RpcContext> SERVER_LOCAL = new InternalThreadLocal<RpcContext>() {
         @Override
