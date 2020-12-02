@@ -73,13 +73,18 @@ public class EagerThreadPoolExecutorTest {
                 new AbortPolicyWithReport(name, URL));
         taskQueue.setExecutor(executor);
 
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 30; i++) {
             Thread.sleep(50);
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     System.out.println("thread number in current pool：" + executor.getPoolSize() + ",  task number in task queue：" + executor.getQueue()
                             .size() + " executor size: " + executor.getPoolSize());
+//                        int i = 0;
+//                        for (int j = 0; j < 1000000000; j++) {
+//                            i = j + 1;
+//                        }
+//                    System.out.println(i);
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {

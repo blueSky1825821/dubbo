@@ -26,18 +26,22 @@ import java.util.Set;
  * {@link InternalThread}.
  * <p></p>
  * Internally, a {@link InternalThread} uses a constant index in an array, instead of using hash code and hash table,
- * to look for a variable.  Although seemingly very subtle, it yields slight performance advantage over using a hash
+ * to look for a variable.  Although seemingly very subtle(微妙的), it yields slight performance advantage over using a hash
  * table, and it is useful when accessed frequently.
  * <p></p>
  * This design is learning from {@see io.netty.util.concurrent.FastThreadLocal} which is in Netty.
+ *
+ * 学习参考：https://www.shuzhiduo.com/A/8Bz8q18xJx/
+ * 主要就是InternalThread中InternalThreadLocalMap中有index，每次获取时根据index来获取，而不用走hash来获取，设计非常棒
  */
 public class InternalThreadLocal<V> {
-
+    //在数组的第一个位置维护当前线程里面的所有的 InternalThreadLocalMap
     private static final int VARIABLES_TO_REMOVE_INDEX = InternalThreadLocalMap.nextVariableIndex();
 
     private final int index;
 
     public InternalThreadLocal() {
+        //index 一直增加，则这种方式只能用于固定容量的线程中，否则内存益处
         index = InternalThreadLocalMap.nextVariableIndex();
     }
 
@@ -106,7 +110,7 @@ public class InternalThreadLocal<V> {
         if (v == InternalThreadLocalMap.UNSET || v == null) {
             return;
         }
-
+        //移除数组第一个元素中维护的某个值
         Set<InternalThreadLocal<?>> variablesToRemove = (Set<InternalThreadLocal<?>>) v;
         variablesToRemove.remove(variable);
     }

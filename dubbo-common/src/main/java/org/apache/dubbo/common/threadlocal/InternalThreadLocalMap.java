@@ -43,11 +43,17 @@ public final class InternalThreadLocalMap {
         return slowThreadLocalMap.get();
     }
 
+    /**
+     * 获取InternalThreadLocalMap
+     * InternalThread
+     */
     public static InternalThreadLocalMap get() {
         Thread thread = Thread.currentThread();
         if (thread instanceof InternalThread) {
+            //直接获取快
             return fastGet((InternalThread) thread);
         }
+        //hash冲突获取方式慢
         return slowGet();
     }
 
@@ -66,6 +72,7 @@ public final class InternalThreadLocalMap {
 
     public static int nextVariableIndex() {
         int index = NEXT_INDEX.getAndIncrement();
+        //如果不把值减回去，加一的代码还在不断的被调用，那么这个 index 理论上讲是有可能又被加到正数的
         if (index < 0) {
             NEXT_INDEX.decrementAndGet();
             throw new IllegalStateException("Too many thread-local indexed variables");
