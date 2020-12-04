@@ -54,10 +54,12 @@ public class DispatcherServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        // 从HANDLERS集合中查询端口对应的HttpHandler对象
         HttpHandler handler = HANDLERS.get(request.getLocalPort());
         if (handler == null) {// service not found.
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Service not found.");
         } else {
+            // 将请求委托给HttpHandler对象处理
             handler.handle(request, response);
         }
     }

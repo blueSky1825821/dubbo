@@ -61,11 +61,11 @@ public class JettyHttpServer extends AbstractHttpServer {
         threadPool.setDaemon(true);
         threadPool.setMaxThreads(threads);
         threadPool.setMinThreads(threads);
-
+        // 创建Jetty Server
         server = new Server(threadPool);
 
         ServerConnector connector = new ServerConnector(server);
-
+        // 创建Jetty Server
         String bindIp = url.getParameter(Constants.BIND_IP_KEY, url.getHost());
         if (!url.isAnyHost() && NetUtils.isValidLocalHost(bindIp)) {
             connector.setHost(bindIp);
@@ -73,11 +73,11 @@ public class JettyHttpServer extends AbstractHttpServer {
         connector.setPort(url.getParameter(Constants.BIND_PORT_KEY, url.getPort()));
 
         server.addConnector(connector);
-
+        // 创建ServletHandler并与Jetty Server关联，由DispatcherServlet处理全部的请求
         ServletHandler servletHandler = new ServletHandler();
         ServletHolder servletHolder = servletHandler.addServletWithMapping(DispatcherServlet.class, "/*");
         servletHolder.setInitOrder(2);
-
+        // 创建ServletContextHandler并与Jetty Server关联
         // dubbo's original impl can't support the use of ServletContext
         //        server.addHandler(servletHandler);
         // TODO Context.SESSIONS is the best option here? (In jetty 9.x, it becomes ServletContextHandler.SESSIONS)

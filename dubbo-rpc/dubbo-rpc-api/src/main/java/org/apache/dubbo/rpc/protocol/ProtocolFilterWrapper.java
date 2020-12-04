@@ -59,6 +59,7 @@ public class ProtocolFilterWrapper implements Protocol {
             for (int i = filters.size() - 1; i >= 0; i--) {
                 final Filter filter = filters.get(i);
                 final Invoker<T> next = last;
+                // 遍历 Filter 集合，将每个 Filter 实现封装成一个匿名 Invoker
                 last = new Invoker<T>() {
 
                     @Override
@@ -100,6 +101,7 @@ public class ProtocolFilterWrapper implements Protocol {
                         } finally {
 
                         }
+                        // 在responseFuture之上注册回调
                         return asyncResult.whenCompleteWithContext((r, t) -> {
                             if (filter instanceof ListenableFilter) {
                                 ListenableFilter listenableFilter = ((ListenableFilter) filter);
@@ -113,6 +115,7 @@ public class ProtocolFilterWrapper implements Protocol {
                                         }
                                     }
                                 } finally {
+                                    //完成后移除
                                     listenableFilter.removeListener(invocation);
                                 }
                             } else if (filter instanceof Filter.Listener) {

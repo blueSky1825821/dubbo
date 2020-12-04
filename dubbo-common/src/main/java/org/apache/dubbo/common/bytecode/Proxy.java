@@ -47,8 +47,16 @@ public abstract class Proxy {
             throw new UnsupportedOperationException("Method [" + ReflectUtils.getName(method) + "] unimplemented.");
         }
     };
+    /**
+     * 作为代理类的后缀，这主要是为了避免类名重复发生冲突
+     */
     private static final AtomicLong PROXY_CLASS_COUNTER = new AtomicLong(0);
     private static final String PACKAGE_NAME = Proxy.class.getPackage().getName();
+
+    /**
+     * 只具有弱引用的对象拥有更短暂的生命周期。
+     * 在垃圾回收器线程扫描它所管辖的内存区域的过程中，一旦发现了只具有弱引用的对象，不管当前内存空间足够与否，都会回收它的内存。
+     */
     private static final Map<ClassLoader, Map<String, Object>> PROXY_CACHE_MAP = new WeakHashMap<ClassLoader, Map<String, Object>>();
 
     private static final Object PENDING_GENERATION_MARKER = new Object();
@@ -79,6 +87,7 @@ public abstract class Proxy {
         }
 
         StringBuilder sb = new StringBuilder();
+        // 循环处理每个接口类
         for (int i = 0; i < ics.length; i++) {
             String itf = ics[i].getName();
             if (!ics[i].isInterface()) {
@@ -87,6 +96,7 @@ public abstract class Proxy {
 
             Class<?> tmp = null;
             try {
+                // 加载接口类，加载失败则直接报错, 不进行初始化
                 tmp = Class.forName(itf, false, cl);
             } catch (ClassNotFoundException e) {
             }
@@ -94,7 +104,7 @@ public abstract class Proxy {
             if (tmp != ics[i]) {
                 throw new IllegalArgumentException(ics[i] + " is not visible from class loader");
             }
-
+            // 将接口类的完整名称用分号连接起来
             sb.append(itf).append(';');
         }
 
@@ -103,6 +113,7 @@ public abstract class Proxy {
 
         // get cache by class loader.
         final Map<String, Object> cache;
+        //可以使用concurrentMap putIfAbsent原子操作，但是因为是弱引用map，需要加锁
         synchronized (PROXY_CACHE_MAP) {
             cache = PROXY_CACHE_MAP.computeIfAbsent(cl, k -> new HashMap<>());
         }
@@ -111,20 +122,25 @@ public abstract class Proxy {
         synchronized (cache) {
             do {
                 Object value = cache.get(key);
+                // 获取到WeakReference
                 if (value instanceof Reference<?>) {
                     proxy = (Proxy) ((Reference<?>) value).get();
+                    // 查找到缓存的代理类
                     if (proxy != null) {
                         return proxy;
                     }
                 }
-
+                // 获取到占位符
                 if (value == PENDING_GENERATION_MARKER) {
                     try {
+                        // 阻塞等待其他线程生成好代理类，并添加到缓存中 todo
                         cache.wait();
                     } catch (InterruptedException e) {
                     }
+                    // 设置占位符，由当前线程生成代理类
                 } else {
                     cache.put(key, PENDING_GENERATION_MARKER);
+                    // 退出当前循环
                     break;
                 }
             }
@@ -143,6 +159,7 @@ public abstract class Proxy {
             for (int i = 0; i < ics.length; i++) {
                 if (!Modifier.isPublic(ics[i].getModifiers())) {
                     String npkg = ics[i].getPackage().getName();
+                    // 如果接口不是public的，则需要保证所有接口在一个包下
                     if (pkg == null) {
                         pkg = npkg;
                     } else {
@@ -151,20 +168,25 @@ public abstract class Proxy {
                         }
                     }
                 }
+                // 向ClassGenerator中添加接口
                 ccp.addInterface(ics[i]);
 
                 for (Method method : ics[i].getMethods()) {
                     String desc = ReflectUtils.getDesc(method);
+                    // 跳过已经重复方法以及static方法
                     if (worked.contains(desc) || Modifier.isStatic(method.getModifiers())) {
                         continue;
                     }
                     if (ics[i].isInterface() && Modifier.isStatic(method.getModifiers())) {
                         continue;
                     }
+                    // 将方法描述添加到worked这个Set集合中，进行去重
                     worked.add(desc);
 
                     int ix = methods.size();
+                    // 获取方法的返回值
                     Class<?> rt = method.getReturnType();
+                    // 获取方法的参数列表
                     Class<?>[] pts = method.getParameterTypes();
 
                     StringBuilder code = new StringBuilder("Object[] args = new Object[").append(pts.length).append("];");
@@ -173,9 +195,10 @@ public abstract class Proxy {
                     }
                     code.append(" Object ret = handler.invoke(this, methods[").append(ix).append("], args);");
                     if (!Void.TYPE.equals(rt)) {
+                        // 生成return语句
                         code.append(" return ").append(asArgument(rt, "ret")).append(";");
                     }
-
+                    // 将生成好的方法添加到ClassGenerator中缓存
                     methods.add(method);
                     ccp.addMethod(method.getName(), method.getModifiers(), rt, pts, method.getExceptionTypes(), code.toString());
                 }
@@ -199,10 +222,13 @@ public abstract class Proxy {
             String fcn = Proxy.class.getName() + id;
             ccm = ClassGenerator.newInstance(cl);
             ccm.setClassName(fcn);
+            // 默认构造方法
             ccm.addDefaultConstructor();
+            // 实现Proxy接口
             ccm.setSuperClass(Proxy.class);
             ccm.addMethod("public Object newInstance(" + InvocationHandler.class.getName() + " h){ return new " + pcn + "($1); }");
             Class<?> pc = ccm.toClass();
+            // 实现newInstance()方法，返回上面创建的代理实例类的对象
             proxy = (Proxy) pc.newInstance();
         } catch (RuntimeException e) {
             throw e;

@@ -44,6 +44,7 @@ public interface ChannelHandler {
 
     /**
      * on message sent.
+     * 1：发送消息
      *
      * @param channel channel.
      * @param message message.
@@ -52,6 +53,7 @@ public interface ChannelHandler {
 
     /**
      * on message received.
+     * 2：回调接受消息
      *
      * @param channel channel.
      * @param message message.

@@ -29,6 +29,11 @@ import org.apache.dubbo.remoting.transport.dispatcher.WrappedChannelHandler;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
+/**
+ * Consumer Client 响应流程
+ * 将所有的消息都派发到业务线程
+ * 会将所有网络事件以及消息交给关联的线程池进行处理
+ */
 public class AllChannelHandler extends WrappedChannelHandler {
 
     public AllChannelHandler(ChannelHandler handler, URL url) {
@@ -55,12 +60,15 @@ public class AllChannelHandler extends WrappedChannelHandler {
         }
     }
 
+    /**
+     * 接受消息
+     */
     @Override
     public void received(Channel channel, Object message) throws RemotingException {
         //获取线程池
         ExecutorService executor = getPreferredExecutorService(message);
         try {
-            //将消息封装提交
+            //将消息封装提交 threadLessExecutor
             executor.execute(new ChannelEventRunnable(channel, handler, ChannelState.RECEIVED, message));
         } catch (Throwable t) {
         	if(message instanceof Request && t instanceof RejectedExecutionException){

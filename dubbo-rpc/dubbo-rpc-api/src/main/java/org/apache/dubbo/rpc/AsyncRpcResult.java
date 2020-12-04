@@ -52,6 +52,7 @@ public class AsyncRpcResult implements Result {
     /**
      * RpcContext may already have been changed when callback happens, it happens when the same thread is used to execute another RPC call.
      * So we should keep the reference of current RpcContext instance and restore it before callback being executed.
+     * 用于存储相关的 RpcContext 对象。我们知道 RpcContext 是与线程绑定的，而真正执行 AsyncRpcResult 上添加的回调方法的线程可能先后处理过多个不同的 AsyncRpcResult，所以我们需要传递并保存当前的 RpcContext。
      */
     private RpcContext storedContext;
     private RpcContext storedServerContext;
@@ -150,7 +151,7 @@ public class AsyncRpcResult implements Result {
             logger.error("Got exception when trying to fetch the underlying result from AsyncRpcResult.");
             throw new RpcException(e);
         }
-
+        // 根据调用方法的返回值，生成默认值
         return createDefaultValue(invocation);
     }
 
@@ -166,6 +167,7 @@ public class AsyncRpcResult implements Result {
     @Override
     public Result get() throws InterruptedException, ExecutionException {
         if (executor != null && executor instanceof ThreadlessExecutor) {
+            // 针对ThreadlessExecutor的特殊处理，这里调用waitAndDrain()等待响应
             ThreadlessExecutor threadlessExecutor = (ThreadlessExecutor) executor;
             threadlessExecutor.waitAndDrain();
         }
@@ -178,6 +180,7 @@ public class AsyncRpcResult implements Result {
             ThreadlessExecutor threadlessExecutor = (ThreadlessExecutor) executor;
             threadlessExecutor.waitAndDrain();
         }
+        // 非ThreadlessExecutor线程池的场景中，则直接调用Future(最底层是DefaultFuture)的get()方法阻塞
         return responseFuture.get(timeout, unit);
     }
 
@@ -190,7 +193,7 @@ public class AsyncRpcResult implements Result {
 
         return getAppResponse().recreate();
     }
-
+    // 在responseFuture之上注册回调
     public Result whenCompleteWithContext(BiConsumer<Result, Throwable> fn) {
         this.responseFuture = this.responseFuture.whenComplete((v, t) -> {
             beforeContext.accept(v, t);
@@ -287,13 +290,16 @@ public class AsyncRpcResult implements Result {
 
     private RpcContext tmpServerContext;
     private BiConsumer<Result, Throwable> beforeContext = (appResponse, t) -> {
+        // 将当前线程的 RpcContext 记录到 tmpContext 中
         tmpContext = RpcContext.getContext();
         tmpServerContext = RpcContext.getServerContext();
+        // 将构造函数中存储的 RpcContext 设置到当前线程中
         RpcContext.restoreContext(storedContext);
         RpcContext.restoreServerContext(storedServerContext);
     };
 
     private BiConsumer<Result, Throwable> afterContext = (appResponse, t) -> {
+        // 将tmpContext中存储的RpcContext恢复到当前线程绑定的RpcContext
         RpcContext.restoreContext(tmpContext);
         RpcContext.restoreServerContext(tmpServerContext);
     };

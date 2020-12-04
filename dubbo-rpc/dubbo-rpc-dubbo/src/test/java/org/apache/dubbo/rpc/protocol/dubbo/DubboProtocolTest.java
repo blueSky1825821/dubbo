@@ -70,7 +70,7 @@ public class DubboProtocolTest {
         int port = NetUtils.getAvailablePort();
         protocol.export(proxy.getInvoker(service, DemoService.class, URL.valueOf("dubbo://127.0.0.1:" + port + "/" + DemoService.class.getName() + "?codec=exchange")));
         service = proxy.getProxy(protocol.refer(DemoService.class, URL.valueOf("dubbo://127.0.0.1:" + port + "/" + DemoService.class.getName() + "?codec=exchange").addParameter("timeout",
-                3000L)));
+                3000000L)));
         assertEquals(service.getSize(new String[]{"", "", ""}), 3);
     }
 

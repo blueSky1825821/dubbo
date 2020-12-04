@@ -17,7 +17,10 @@
 package org.apache.dubbo.rpc;
 
 public enum InvokeMode {
-
+    /**
+     * 客户端同步，异步，服务端异步
+     * @see:org.apache.dubbo.demo.DemoService#sayHelloAsync
+     */
     SYNC, ASYNC, FUTURE;
 
 }

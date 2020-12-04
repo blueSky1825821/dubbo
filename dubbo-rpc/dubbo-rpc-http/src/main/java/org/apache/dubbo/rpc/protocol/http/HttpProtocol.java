@@ -80,13 +80,16 @@ public class HttpProtocol extends AbstractProxyProtocol {
                 throws ServletException {
             String uri = request.getRequestURI();
             JsonRpcServer skeleton = skeletonMap.get(uri);
+            // 处理跨域问题
             if (cors) {
                 response.setHeader(ACCESS_CONTROL_ALLOW_ORIGIN_HEADER, "*");
                 response.setHeader(ACCESS_CONTROL_ALLOW_METHODS_HEADER, "POST");
                 response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS_HEADER, "*");
             }
+            // 处理OPTIONS请求
             if (request.getMethod().equalsIgnoreCase("OPTIONS")) {
                 response.setStatus(200);
+                // 只处理POST请求
             } else if (request.getMethod().equalsIgnoreCase("POST")) {
 
                 RpcContext.getContext().setRemoteAddress(request.getRemoteAddr(), request.getRemotePort());
@@ -95,6 +98,7 @@ public class HttpProtocol extends AbstractProxyProtocol {
                 } catch (Throwable e) {
                     throw new ServletException(e);
                 }
+                // 其他Method类型的请求，例如，GET请求，直接返回500
             } else {
                 response.setStatus(500);
             }
@@ -107,21 +111,26 @@ public class HttpProtocol extends AbstractProxyProtocol {
         String addr = getAddr(url);
         ProtocolServer protocolServer = serverMap.get(addr);
         if (protocolServer == null) {
+            // 创建HttpServer,注意，传入的HttpHandler实现是InternalHandler
             RemotingServer remotingServer = httpBinder.bind(url, new InternalHandler(url.getParameter("cors", false)));
             serverMap.put(addr, new ProxyProtocolServer(remotingServer));
         }
+        // 创建JsonRpcServer对象，并将URL与JsonRpcServer的映射关系记录到skeletonMap集合中
         final String path = url.getAbsolutePath();
         final String genericPath = path + "/" + GENERIC_KEY;
         JsonRpcServer skeleton = new JsonRpcServer(impl, type);
         JsonRpcServer genericServer = new JsonRpcServer(impl, GenericService.class);
         skeletonMap.put(path, skeleton);
         skeletonMap.put(genericPath, genericServer);
+        // 返回Runnable回调，在Exporter中的unexport()方法中执行
         return () -> {
             skeletonMap.remove(path);
             skeletonMap.remove(genericPath);
         };
     }
-
+    /*
+     * 创建业务代理类
+     */
     @SuppressWarnings("unchecked")
     @Override
     protected <T> T doRefer(final Class<T> serviceType, URL url) throws RpcException {
@@ -143,8 +152,9 @@ public class HttpProtocol extends AbstractProxyProtocol {
 
         jsonRpcProxyFactoryBean.setServiceUrl(key);
         jsonRpcProxyFactoryBean.setServiceInterface(serviceType);
-
+        //初始化设置
         jsonProxyFactoryBean.afterPropertiesSet();
+        // 返回的是serviceType类型的代理对象
         return (T) jsonProxyFactoryBean.getObject();
     }
 

@@ -66,7 +66,9 @@ public interface Constants {
     String ID_KEY = "id";
 
     String ASYNC_KEY = "async";
-
+    /**
+     * 是否需要关注返回值的请求
+      */
     String RETURN_KEY = "return";
 
     String TOKEN_KEY = "token";
