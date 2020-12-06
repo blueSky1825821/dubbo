@@ -30,6 +30,7 @@ import java.util.List;
  * <a href="http://en.wikipedia.org/wiki/Directory_service">Directory Service</a>
  *
  * @see org.apache.dubbo.rpc.cluster.Cluster#join(Directory)
+ * 表示多个 Invoker 的集合，是后续路由规则、负载均衡策略以及集群容错的基础。
  */
 public interface Directory<T> extends Node {
 

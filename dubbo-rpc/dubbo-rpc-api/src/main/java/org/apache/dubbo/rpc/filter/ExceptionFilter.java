@@ -62,6 +62,7 @@ public class ExceptionFilter implements Filter, Filter.Listener {
                 if (!(exception instanceof RuntimeException) && (exception instanceof Exception)) {
                     return;
                 }
+                //接口声明的异常直接抛出
                 // directly throw if the exception appears in the signature
                 try {
                     Method method = invoker.getInterface().getMethod(invocation.getMethodName(), invocation.getParameterTypes());

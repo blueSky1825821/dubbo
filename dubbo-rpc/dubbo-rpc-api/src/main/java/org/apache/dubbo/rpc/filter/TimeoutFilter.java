@@ -46,6 +46,9 @@ public class TimeoutFilter implements Filter, Filter.Listener {
         return invoker.invoke(invocation);
     }
 
+    /*
+     * @see:org.apache.dubbo.rpc.protocol.dubbo.DubboInvoker.calculateTimeout
+     */
     @Override
     public void onResponse(Result appResponse, Invoker<?> invoker, Invocation invocation) {
         Object obj = RpcContext.getContext().get(TIME_COUNTDOWN_KEY);

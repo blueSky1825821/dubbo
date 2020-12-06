@@ -41,6 +41,7 @@ public class DefaultTPSLimiter implements TPSLimiter {
         int rate = url.getParameter(TPS_LIMIT_RATE_KEY, -1);
         long interval = url.getParameter(TPS_LIMIT_INTERVAL_KEY, DEFAULT_TPS_LIMIT_INTERVAL);
         String serviceKey = url.getServiceKey();
+        // 需要限流，尝试从stats集合中获取相应的StatItem对象
         if (rate > 0) {
             StatItem statItem = stats.get(serviceKey);
             if (statItem == null) {

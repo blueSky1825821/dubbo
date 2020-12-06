@@ -31,22 +31,29 @@ import java.util.concurrent.atomic.AtomicLong;
  * @see org.apache.dubbo.rpc.cluster.loadbalance.LeastActiveLoadBalance
  */
 public class RpcStatus {
-
+    //这个集合记录了当前 Consumer 调用每个服务的状态信息，其中 Key 是 URL，Value 是对应的 RpcStatus 对象
     private static final ConcurrentMap<String, RpcStatus> SERVICE_STATISTICS = new ConcurrentHashMap<String,
             RpcStatus>();
-
+    //这个集合记录了当前 Consumer 调用每个服务方法的状态信息，其中第一层 Key 是 URL ，第二层 Key 是方法名称，第三层是对应的 RpcStatus 对象。
     private static final ConcurrentMap<String, ConcurrentMap<String, RpcStatus>> METHOD_STATISTICS =
             new ConcurrentHashMap<String, ConcurrentMap<String, RpcStatus>>();
 
     private final ConcurrentMap<String, Object> values = new ConcurrentHashMap<String, Object>();
-
+    //当前并发度
     private final AtomicInteger active = new AtomicInteger();
+    //调用的总数
     private final AtomicLong total = new AtomicLong();
+    //失败的调用数
     private final AtomicInteger failed = new AtomicInteger();
+    //所有调用的总耗时
     private final AtomicLong totalElapsed = new AtomicLong();
+    //所有失败调用的总耗时
     private final AtomicLong failedElapsed = new AtomicLong();
+    //所有调用中最长的耗时
     private final AtomicLong maxElapsed = new AtomicLong();
+    //所有失败调用中最长的耗时
     private final AtomicLong failedMaxElapsed = new AtomicLong();
+    //所有成功调用中最长的耗时
     private final AtomicLong succeededMaxElapsed = new AtomicLong();
 
     private RpcStatus() {

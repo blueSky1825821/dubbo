@@ -24,14 +24,28 @@ import java.util.concurrent.atomic.LongAdder;
  */
 class StatItem {
 
+    /**
+     * 对应的 ServiceKey
+     */
     private String name;
 
     private long lastResetTime;
 
     private long interval;
-
+    /**
+     * 初始值为 rate 值，每通过一个请求 token 递减一，当减为 0 时，不再通过任何请求，实现限流的作用
+     * 不使用AtomicLong多个线程同时更新一个求和的变量，
+     *
+     * ⚠️:比如统计集合的数量，但是不能用于细粒度同步控制，
+     *
+     * 换句话说这个是可能有误差的（因为更新与读取是并行的）。
+     * 在低并发场景场景下LongAdder和AtomicLong的性能表现没什么差别，但是当高并发竞争的时候，
+     * 这个类将具备更好的吞吐性能，但是相应的也会耗费相当的空间
+     */
     private LongAdder token;
-
+    /**
+     * 一段时间内能通过的 TPS 上限
+     */
     private int rate;
 
     StatItem(String name, int rate, long interval) {
@@ -44,14 +58,16 @@ class StatItem {
 
     public boolean isAllowable() {
         long now = System.currentTimeMillis();
+        // 周期性重置token
         if (now > lastResetTime + interval) {
             token = buildLongAdder(rate);
             lastResetTime = now;
         }
-
+        // 请求限流
         if (token.sum() < 0) {
             return false;
         }
+        // 请求正常通过
         token.decrement();
         return true;
     }

@@ -125,6 +125,7 @@ public class ContextFilter implements Filter, Filter.Listener {
         }
 
         try {
+            // 在整个调用过程中，需要保持当前RpcContext不被删除，这里会将remove开关关掉，这样，removeContext()方法不会删除LOCAL RpcContext了
             context.clearAfterEachInvoke(false);
             return invoker.invoke(invocation);
         } finally {

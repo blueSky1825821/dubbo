@@ -50,15 +50,21 @@ public class ActiveLimitFilter implements Filter, Filter.Listener {
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         URL url = invoker.getUrl();
         String methodName = invocation.getMethodName();
+        // 获取最大并发数
         int max = invoker.getUrl().getMethodParameter(methodName, ACTIVES_KEY, 0);
+        // 获取该方法的状态信息
         final RpcStatus rpcStatus = RpcStatus.getStatus(invoker.getUrl(), invocation.getMethodName());
+        // 尝试并发度加一
         if (!RpcStatus.beginCount(url, methodName, max)) {
             long timeout = invoker.getUrl().getMethodParameter(invocation.getMethodName(), TIMEOUT_KEY, 0);
             long start = System.currentTimeMillis();
             long remain = timeout;
+            // 加锁
             synchronized (rpcStatus) {
+                // 再次尝试并发度加一
                 while (!RpcStatus.beginCount(url, methodName, max)) {
                     try {
+                        // 当前线程阻塞，等待并发度降低
                         rpcStatus.wait(remain);
                     } catch (InterruptedException e) {
                         // ignore
@@ -75,7 +81,7 @@ public class ActiveLimitFilter implements Filter, Filter.Listener {
                 }
             }
         }
-
+        // 添加一个attribute
         invocation.put(ACTIVELIMIT_FILTER_START_TIME, System.currentTimeMillis());
 
         return invoker.invoke(invocation);
@@ -86,8 +92,9 @@ public class ActiveLimitFilter implements Filter, Filter.Listener {
         String methodName = invocation.getMethodName();
         URL url = invoker.getUrl();
         int max = invoker.getUrl().getMethodParameter(methodName, ACTIVES_KEY, 0);
-
+        // 调用 RpcStatus.endCount() 方法完成调用监控的统计
         RpcStatus.endCount(url, methodName, getElapsed(invocation), true);
+        // 调用 notifyFinish() 方法唤醒阻塞在对应 RpcStatus 对象上的线程
         notifyFinish(RpcStatus.getStatus(url, methodName), max);
     }
 
