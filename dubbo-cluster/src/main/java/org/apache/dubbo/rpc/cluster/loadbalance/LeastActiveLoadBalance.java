@@ -27,6 +27,7 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * LeastActiveLoadBalance
  * <p>
+ *     配合ActiveLimitFilter 使用记录每个接口方法的活跃请求数
  * Filter the number of invokers with the least number of active calls and count the weights and quantities of these invokers.
  * If there is only one invoker, use the invoker directly;
  * if there are multiple invokers and the weights are not the same, then random according to the total weight;
