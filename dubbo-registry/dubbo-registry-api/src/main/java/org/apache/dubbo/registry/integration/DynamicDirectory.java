@@ -62,11 +62,15 @@ public abstract class DynamicDirectory<T> extends AbstractDirectory<T> implement
 
     protected static final RouterFactory ROUTER_FACTORY = ExtensionLoader.getExtensionLoader(RouterFactory.class)
             .getAdaptiveExtension();
-
+    //服务对应的 ServiceKey，默认是 {interface}:[group]:[version] 三部分构成。
     protected final String serviceKey; // Initialization at construction time, assertion not null
+    //服务接口类型，例如，org.apache.dubbo.demo.DemoService
     protected final Class<T> serviceType; // Initialization at construction time, assertion not null
+    //是否引用多个服务组
     protected final boolean multiGroup;
+    //使用的 Protocol 实现
     protected Protocol protocol; // Initialization at the time of injection, the assertion is not null
+    //使用的注册中心实现
     protected Registry registry; // Initialization at the time of injection, the assertion is not null
     protected volatile boolean forbidden = false;
     protected boolean shouldRegister;
@@ -82,18 +86,26 @@ public abstract class DynamicDirectory<T> extends AbstractDirectory<T> implement
      * Rule one: for a certain provider <ip:port,timeout=100>
      * Rule two: for all providers <* ,timeout=5000>
      */
+    //动态更新的配置信息
     protected volatile List<Configurator> configurators; // The initial value is null and the midway may be assigned to null, please use the local variable reference
 
     // Map<url, Invoker> cache service url to invoker mapping.
+    //Provider URL 与对应 Invoker 之间的映射，该集合会与 invokers 字段同时动态更新
     protected volatile Map<URL, Invoker<T>> urlInvokerMap; // The initial value is null and the midway may be assigned to null, please use the local variable reference
+    //动态更新的 Invoker 集合
     protected volatile List<Invoker<T>> invokers;
 
     // Set<invokerUrls> cache invokeUrls to invokers mapping.
+    //当前缓存的所有 Provider 的 URL，该集合会与 invokers 字段同时动态更新
     protected volatile Set<URL> cachedInvokerUrls; // The initial value is null and the midway may be assigned to null, please use the local variable reference
 
     protected ServiceInstancesChangedListener serviceListener;
 
     public DynamicDirectory(Class<T> serviceType, URL url) {
+        // 传入的url参数是注册中心的URL，例如，
+        // zookeeper://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?...，
+        // 其中refer参数包含了Consumer信息，例如，refer=
+        // application=dubbo-demo-api-consumer&dubbo=2.0.2&interface=org.apache.dubbo.demo.DemoService&pid=13423&register.ip=192.168.124.3&side=consumer(URLDecode之后的值)
         super(url);
         if (serviceType == null) {
             throw new IllegalArgumentException("service type is null.");
@@ -106,7 +118,7 @@ public abstract class DynamicDirectory<T> extends AbstractDirectory<T> implement
         }
         this.serviceType = serviceType;
         this.serviceKey = super.getConsumerUrl().getServiceKey();
-
+        // 解析refer参数值，得到其中Consumer的属性信息
         String group = queryMap.get(GROUP_KEY) != null ? queryMap.get(GROUP_KEY) : "";
         this.multiGroup = group != null && (ANY_VALUE.equals(group) || group.contains(","));
     }

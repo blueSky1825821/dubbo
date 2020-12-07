@@ -36,6 +36,7 @@ public interface Directory<T> extends Node {
 
     /**
      * get service type.
+     * 服务接口类型
      *
      * @return service type.
      */
@@ -43,6 +44,7 @@ public interface Directory<T> extends Node {
 
     /**
      * list invokers.
+     * list()方法会根据传入的Invocation请求，过滤自身维护的Invoker集合，返回符合条件的Invoker集合
      *
      * @return invokers
      */
@@ -50,6 +52,9 @@ public interface Directory<T> extends Node {
 
     List<Invoker<T>> getAllInvokers();
 
+    /**
+     * Consumer端的URL
+     */
     URL getConsumerUrl();
 
     boolean isDestroyed();

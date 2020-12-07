@@ -30,6 +30,7 @@ import java.util.List;
 
 /**
  * StaticDirectory
+ * 维护的 Invoker 集合则是静态的，在 StaticDirectory 对象创建完成之后，不会再发生变化。
  */
 public class StaticDirectory<T> extends AbstractDirectory<T> {
     private static final Logger logger = LoggerFactory.getLogger(StaticDirectory.class);
@@ -92,8 +93,11 @@ public class StaticDirectory<T> extends AbstractDirectory<T> {
     }
 
     public void buildRouterChain() {
+        // 创建内置Router集合
         RouterChain<T> routerChain = RouterChain.buildChain(getUrl());
+        // 将invokers与RouterChain关联
         routerChain.setInvokers(invokers);
+        // 设置routerChain字段
         this.setRouterChain(routerChain);
     }
 

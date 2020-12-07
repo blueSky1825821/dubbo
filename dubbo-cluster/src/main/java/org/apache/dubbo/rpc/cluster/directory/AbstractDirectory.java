@@ -52,7 +52,7 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
     private volatile boolean destroyed = false;
 
     protected volatile URL consumerUrl;
-
+    //Consumer URL 中 refer 参数解析后得到的全部 KV。
     protected final Map<String, String> queryMap; // Initialization at construction time, assertion not null
     protected final String consumedProtocol;
 
@@ -66,7 +66,7 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
         if (url == null) {
             throw new IllegalArgumentException("url == null");
         }
-
+        // 解析refer参数值，得到其中Consumer的属性信息
         queryMap = StringUtils.parseQueryString(url.getParameterAndDecoded(REFER_KEY));
         String path = queryMap.get(PATH_KEY);
         this.consumedProtocol = this.queryMap.get(PROTOCOL_KEY) == null ? DUBBO : this.queryMap.get(PROTOCOL_KEY);
