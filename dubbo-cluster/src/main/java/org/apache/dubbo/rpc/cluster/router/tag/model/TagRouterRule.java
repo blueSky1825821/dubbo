@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 
 /**
  * %YAML1.2
+ * yam解析
+ *
  * ---
  * force: true
  * runtime: false

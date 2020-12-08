@@ -93,6 +93,7 @@ public class LeastActiveLoadBalance extends AbstractLoadBalance {
             }
         }
         // Choose an invoker from all the least active invokers
+        // 如果只有一个活跃请求数最小的Invoker对象，直接返回即可
         if (leastCount == 1) {
             // If we got exactly one invoker having the least active value, return this invoker directly.
             return invokers.get(leastIndexes[0]);
@@ -100,6 +101,7 @@ public class LeastActiveLoadBalance extends AbstractLoadBalance {
         if (!sameWeight && totalWeight > 0) {
             // If (not every invoker has the same weight & at least one invoker's weight>0), select randomly based on 
             // totalWeight.
+            // 下面按照RandomLoadBalance的逻辑，从活跃请求数最小的Invoker集合中，随机选择一个Invoker对象返回
             int offsetWeight = ThreadLocalRandom.current().nextInt(totalWeight);
             // Return a invoker based on the random value.
             for (int i = 0; i < leastCount; i++) {

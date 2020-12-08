@@ -67,6 +67,7 @@ public class ShortestResponseLoadBalance extends AbstractLoadBalance {
             weights[i] = afterWarmup;
             // Same as LeastActiveLoadBalance
             if (estimateResponse < shortestResponse) {
+                // 第一次找到Invoker集合中最短响应耗时的Invoker对象，记录其相关信息
                 shortestResponse = estimateResponse;
                 shortestCount = 1;
                 shortestIndexes[0] = i;
@@ -74,6 +75,7 @@ public class ShortestResponseLoadBalance extends AbstractLoadBalance {
                 firstWeight = afterWarmup;
                 sameWeight = true;
             } else if (estimateResponse == shortestResponse) {
+                // 出现多个耗时最短的Invoker对象
                 shortestIndexes[shortestCount++] = i;
                 totalWeight += afterWarmup;
                 if (sameWeight && i > 0
@@ -87,6 +89,7 @@ public class ShortestResponseLoadBalance extends AbstractLoadBalance {
         }
         if (!sameWeight && totalWeight > 0) {
             int offsetWeight = ThreadLocalRandom.current().nextInt(totalWeight);
+            // 如果耗时最短的所有Invoker对象的权重不相同，则通过加权随机负载均衡的方式选择一个Invoker返回
             for (int i = 0; i < shortestCount; i++) {
                 int shortestIndex = shortestIndexes[i];
                 offsetWeight -= weights[shortestIndex];
