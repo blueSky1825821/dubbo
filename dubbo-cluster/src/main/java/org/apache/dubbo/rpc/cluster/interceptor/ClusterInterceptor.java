@@ -28,9 +28,9 @@ import org.apache.dubbo.rpc.cluster.support.AbstractClusterInvoker;
  */
 @SPI
 public interface ClusterInterceptor {
-
+    // 前置拦截方法
     void before(AbstractClusterInvoker<?> clusterInvoker, Invocation invocation);
-
+    // 后置拦截方法
     void after(AbstractClusterInvoker<?> clusterInvoker, Invocation invocation);
 
     /**
@@ -43,10 +43,11 @@ public interface ClusterInterceptor {
      * @return
      * @throws RpcException
      */
+    // 调用ClusterInvoker的invoke()方法完成请求
     default Result intercept(AbstractClusterInvoker<?> clusterInvoker, Invocation invocation) throws RpcException {
         return clusterInvoker.invoke(invocation);
     }
-
+    // 这个Listener用来监听请求的正常结果以及异常
     interface Listener {
 
         void onMessage(Result appResponse, AbstractClusterInvoker<?> clusterInvoker, Invocation invocation);
